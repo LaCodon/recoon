@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/lacodon/recoon/pkg/config"
 	"github.com/lacodon/recoon/pkg/controller/configrepo"
+	"github.com/lacodon/recoon/pkg/controller/project"
 	"github.com/lacodon/recoon/pkg/controller/repository"
 	"github.com/lacodon/recoon/pkg/puller"
 	"github.com/lacodon/recoon/pkg/runner"
@@ -46,6 +47,7 @@ func rootCmdRun(cmd *cobra.Command, _ []string) error {
 	repoPuller := puller.NewPuller(api)
 	repoConfigController := configrepo.NewController(config.Cfg.ConfigRepo.CloneURL, config.Cfg.ConfigRepo.BranchName, api)
 	repositoryController := repository.NewController(apiWatcher, api)
+	projectController := project.NewController(apiWatcher, api)
 
 	ctx, cancel := context.WithCancel(cmd.Context())
 
@@ -54,6 +56,7 @@ func rootCmdRun(cmd *cobra.Command, _ []string) error {
 	taskManager := new(runner.Runner)
 	taskManager.AddTask(repositoryController)
 	taskManager.AddTask(repoConfigController)
+	taskManager.AddTask(projectController)
 	taskManager.AddTask(apiWatcher)
 	taskManager.AddTask(repoPuller)
 	taskManager.StartAll(ctx)

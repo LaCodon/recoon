@@ -106,22 +106,6 @@ func (c *Controller) handleRepoUpdate(ctx context.Context, event store.Event) er
 		}
 	}
 
-	//workingDir := filepath.Join(apiRepo.Status.LocalPath, apiRepo.Spec.Path)
-	//composeProject, err := composecli.ProjectFromOptions(&composecli.ProjectOptions{
-	//	WorkingDir:  workingDir,
-	//	ConfigPaths: []string{filepath.Join(workingDir, "docker-compose.yml")},
-	//	Environment: make(map[string]string),
-	//	EnvFiles:    []string{},
-	//})
-	//if err != nil {
-	//	return errors.WithMessage(err, "failed to load docker-compose.yml")
-	//}
-	//
-	//logrus.Println(composeProject.Name)
-	//
-	//yml, _ := yaml.Marshal(composeProject)
-	//logrus.Println(string(yml))
-
 	return nil
 }
 
