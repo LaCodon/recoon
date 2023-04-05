@@ -10,6 +10,7 @@ import (
 	"github.com/lacodon/recoon/pkg/store"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"os"
 	"time"
 )
 
@@ -79,17 +80,26 @@ func (p *Puller) runOnce(ctx context.Context) error {
 		pullRepo := repos[0]
 		localRepo, err := gitrepo.NewGitRepository(ctx, pullRepo.Spec.Url, pullRepo.Spec.Branch)
 		if err != nil {
-			return errors.WithMessage(err, "failed to init git repo")
+			logrus.WithError(err).Warn("failed to init git repo")
+			continue
 		}
 
 		if err := localRepo.Pull(ctx); err != nil {
-			return errors.WithMessage(err, "failed to pull repo")
+			logrus.WithError(err).Warn("failed to pull repo")
+			continue
 		}
 
 		for _, repo := range repos {
 			repo.Status.CurrentCommitId = localRepo.GetCurrentCommitId()
 			if err := p.api.Update(repo); err != nil {
-				return errors.WithMessage(err, "failed to update repository")
+				if errors.Is(err, store.ErrNotFound) {
+					// maybe repo has been deleted in the meantime -> remove files on disk
+					_ = os.RemoveAll(localRepo.GetLocalPath())
+					continue
+				}
+
+				logrus.WithError(err).Warn("failed to update repository")
+				continue
 			}
 		}
 	}

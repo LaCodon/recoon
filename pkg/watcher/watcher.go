@@ -8,7 +8,7 @@ import (
 )
 
 type Watcher interface {
-	Watch(kinds ...metav1.VersionKind) <-chan store.Event
+	Watch(kinds ...metav1.VersionKind) chan store.Event
 }
 
 type DefaultWatcher struct {
@@ -29,7 +29,7 @@ func NewDefaultWatcher(input <-chan store.Event) *DefaultWatcher {
 	}
 }
 
-func (w *DefaultWatcher) Watch(kinds ...metav1.VersionKind) <-chan store.Event {
+func (w *DefaultWatcher) Watch(kinds ...metav1.VersionKind) chan store.Event {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 

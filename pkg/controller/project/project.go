@@ -10,16 +10,18 @@ import (
 )
 
 type Controller struct {
-	events <-chan store.Event
-	api    store.GetterSetter
+	events  <-chan store.Event
+	api     store.GetterSetter
+	retryer retry.Retryer
 }
 
 func NewController(apiWatcher watcher.Watcher, api store.GetterSetter) *Controller {
 	events := apiWatcher.Watch(projectv1.VersionKind)
 
 	return &Controller{
-		events: events,
-		api:    api,
+		events:  events,
+		api:     api,
+		retryer: retry.New(events),
 	}
 }
 
@@ -33,9 +35,7 @@ func (c *Controller) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case event := <-c.events:
-			if err := retry.KeepRetrying(ctx, event, c.handleProjectChangeEvent); err != nil {
-				return err
-			}
+			c.retryer.RetryOnError(ctx, event, c.handleProjectChangeEvent)
 		}
 	}
 }

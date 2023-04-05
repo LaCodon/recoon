@@ -2,6 +2,7 @@ package gitrepo
 
 import (
 	"context"
+	"errors"
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-git/v5"
 	gitconfig "github.com/go-git/go-git/v5/config"
@@ -115,7 +116,19 @@ func (g *gitRepo) Pull(ctx context.Context) error {
 		Progress:   progressWriter,
 		Force:      true,
 	}); err != nil {
-		if err != git.NoErrAlreadyUpToDate {
+		if errors.Is(err, git.ErrRemoteNotFound) {
+			if _, err := g.repository.CreateRemote(&gitconfig.RemoteConfig{
+				Name:  "origin",
+				URLs:  []string{g.url},
+				Fetch: []gitconfig.RefSpec{gitconfig.RefSpec(g.url)},
+			}); err != nil {
+				return err
+			}
+
+			return err
+		}
+
+		if !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return err
 		}
 	}

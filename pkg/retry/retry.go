@@ -3,29 +3,41 @@ package retry
 import (
 	"context"
 	"github.com/lacodon/recoon/pkg/store"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"time"
 )
 
 type Retryable func(ctx context.Context, event store.Event) error
 
-func KeepRetrying(ctx context.Context, event store.Event, handler Retryable) error {
-	for i := 0; i < 5; i++ {
-		err := handler(ctx, event.DeepCopy())
-		if err == nil {
-			return nil
-		}
+type Retryer interface {
+	RetryOnError(ctx context.Context, event store.Event, handler Retryable)
+}
 
-		logrus.WithError(err).Warn()
+type defaultRetryer struct {
+	eventChan chan store.Event
+}
 
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(5 * time.Second):
-			continue
-		}
+func New(eventChan chan store.Event) Retryer {
+	return &defaultRetryer{
+		eventChan: eventChan,
+	}
+}
+
+func (d *defaultRetryer) RetryOnError(ctx context.Context, event store.Event, handler Retryable) {
+	err := handler(ctx, event.DeepCopy())
+	if err == nil {
+		return
 	}
 
-	return errors.New("failed after 4 retries")
+	logrus.WithError(err).Warn("failed to handle event")
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(5 * time.Second):
+			logrus.WithField("type", event.Type).WithField("nn", event.Object.GetNamespaceName()).Debug("retrying event...")
+			d.eventChan <- event
+		}
+	}()
 }

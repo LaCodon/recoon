@@ -12,16 +12,18 @@ import (
 )
 
 type Controller struct {
-	events <-chan store.Event
-	api    store.GetterSetter
+	events  <-chan store.Event
+	api     store.GetterSetter
+	retryer retry.Retryer
 }
 
 func NewController(apiWatcher watcher.Watcher, api store.GetterSetter) *Controller {
 	events := apiWatcher.Watch(repositoryv1.VersionKind)
 
 	return &Controller{
-		events: events,
-		api:    api,
+		events:  events,
+		api:     api,
+		retryer: retry.New(events),
 	}
 }
 
@@ -47,9 +49,11 @@ func (c *Controller) handleEvent(ctx context.Context, event store.Event) error {
 	switch event.Object.GetVersionKind() {
 	case repositoryv1.VersionKind:
 		if event.Object.GetName() == configrepo.ConfigRepoName && event.Object.GetNamespace() == "recoon-system" {
-			return retry.KeepRetrying(ctx, event, c.handleConfigRepoChangeEvent)
+			c.retryer.RetryOnError(ctx, event, c.handleConfigRepoChangeEvent)
+			return nil
 		} else {
-			return retry.KeepRetrying(ctx, event, c.handleRepoChangeEvent)
+			c.retryer.RetryOnError(ctx, event, c.handleRepoChangeEvent)
+			return nil
 		}
 	default:
 		return fmt.Errorf("unknown event object kind: %s/%s", event.Object.GetVersionKind(), event.Object.GetNamespaceName())

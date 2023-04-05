@@ -29,7 +29,12 @@ var rootCmd = &cobra.Command{
 }
 
 func rootCmdRun(cmd *cobra.Command, _ []string) error {
-	if err := initRecoon(); err != nil {
+	api, err := store.NewDefaultStore()
+	if err != nil {
+		return err
+	}
+
+	if err := initRecoon(api); err != nil {
 		return err
 	}
 
@@ -37,11 +42,6 @@ func rootCmdRun(cmd *cobra.Command, _ []string) error {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	logrus.Println(sshauth.GetPublicKeyOpenSshFormat(config.Cfg.SSH.KeyDir))
-
-	api, err := store.NewDefaultStore()
-	if err != nil {
-		return err
-	}
 
 	apiWatcher := watcher.NewDefaultWatcher(api.EventsChan())
 	repoPuller := puller.NewPuller(api)

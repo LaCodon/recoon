@@ -287,12 +287,19 @@ func (d *DefaultStore) Delete(vk metav1.VersionKind, namespaceName metav1.Namesp
 	return nil
 }
 
+func (d *DefaultStore) CreateBucket(name string) error {
+	return d.db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(name))
+		return err
+	})
+}
+
 func (d *DefaultStore) EventsChan() <-chan Event {
 	return d.eventsChan
 }
 
 func (d *DefaultStore) makeBucketName(vk metav1.VersionKind) []byte {
-	return []byte(vk.Kind + "/" + vk.Version)
+	return []byte(vk.Version + "/" + vk.Kind)
 }
 
 func (d *DefaultStore) makeKey(namespaceName metav1.NamespaceName) []byte {

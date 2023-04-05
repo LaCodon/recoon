@@ -65,8 +65,12 @@ func (c *Controller) handleRepoCreate(ctx context.Context, event store.Event) er
 func (c *Controller) handleRepoUpdate(ctx context.Context, event store.Event) error {
 	apiRepo := event.Object.(*repositoryv1.Repository)
 
-	if apiRepo.Status == nil || apiRepo.Spec == nil {
+	if apiRepo.Spec == nil {
 		return nil
+	}
+
+	if apiRepo.Status == nil {
+		return c.handleRepoCreate(ctx, event)
 	}
 
 	project := &projectv1.Project{}
