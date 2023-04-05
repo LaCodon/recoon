@@ -22,6 +22,8 @@ type Repository struct {
 }
 
 type Spec struct {
+	// ProjectName of the compose project
+	ProjectName string `json:"projectName"`
 	// Url for git cloning this repository
 	Url string `json:"url,omitempty"`
 	// Branch which should be reconciled
@@ -48,9 +50,10 @@ func (r *Repository) DeepCopy() api.Object {
 
 	if r.Spec != nil {
 		n.Spec = &Spec{
-			Url:    r.Spec.Url,
-			Branch: r.Spec.Branch,
-			Path:   r.Spec.Path,
+			ProjectName: r.Spec.ProjectName,
+			Url:         r.Spec.Url,
+			Branch:      r.Spec.Branch,
+			Path:        r.Spec.Path,
 		}
 	}
 

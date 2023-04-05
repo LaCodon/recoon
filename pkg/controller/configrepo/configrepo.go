@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const ApiRepoName = "config-repo"
+const ConfigRepoName = "config-repo"
 
 type Controller struct {
 	cloneURL   string
@@ -58,13 +58,13 @@ func (c *Controller) runOnce(ctx context.Context) error {
 
 	apiRepo := &repositoryv1.Repository{}
 	if err := c.api.Get(metav1.NamespaceName{
-		Name:      ApiRepoName,
+		Name:      ConfigRepoName,
 		Namespace: "recoon-system",
 	}, apiRepo); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			apiRepo = &repositoryv1.Repository{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      ApiRepoName,
+					Name:      ConfigRepoName,
 					Namespace: "recoon-system",
 				},
 				Spec: &repositoryv1.Spec{

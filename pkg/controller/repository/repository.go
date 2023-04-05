@@ -46,7 +46,7 @@ func (c *Controller) Run(ctx context.Context) error {
 func (c *Controller) handleEvent(ctx context.Context, event store.Event) error {
 	switch event.Object.GetVersionKind() {
 	case repositoryv1.VersionKind:
-		if event.Object.GetName() == configrepo.ApiRepoName && event.Object.GetNamespace() == "recoon-system" {
+		if event.Object.GetName() == configrepo.ConfigRepoName && event.Object.GetNamespace() == "recoon-system" {
 			return retry.KeepRetrying(ctx, event, c.handleConfigRepoChangeEvent)
 		} else {
 			return retry.KeepRetrying(ctx, event, c.handleRepoChangeEvent)

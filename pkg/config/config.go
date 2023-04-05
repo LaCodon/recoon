@@ -6,6 +6,7 @@ type Config struct {
 	Store      Store
 	SSH        SSH
 	ConfigRepo ConfigRepo
+	AppRepo    AppRepo
 }
 
 type Store struct {
@@ -20,6 +21,10 @@ type SSH struct {
 type ConfigRepo struct {
 	CloneURL                string
 	BranchName              string
+	ReconciliationIntervall time.Duration
+}
+
+type AppRepo struct {
 	ReconciliationIntervall time.Duration
 }
 
@@ -38,6 +43,9 @@ func init() {
 		ConfigRepo: ConfigRepo{
 			CloneURL:                "git@github.com:LaCodon/recoon-test.git",
 			BranchName:              "test",
+			ReconciliationIntervall: 10 * time.Second,
+		},
+		AppRepo: AppRepo{
 			ReconciliationIntervall: 5 * time.Second,
 		},
 	}

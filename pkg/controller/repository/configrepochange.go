@@ -17,6 +17,7 @@ type ConfigRepoData struct {
 }
 
 type ConfigRepoMeta struct {
+	Name   string `yaml:"name"`
 	URL    string `yaml:"url"`
 	Branch string `yaml:"branch"`
 	Path   string `yaml:"path"`
@@ -77,9 +78,10 @@ func (c *Controller) handleConfigRepoChangeEvent(ctx context.Context, event stor
 				Namespace: "default",
 			},
 			Spec: &repositoryv1.Spec{
-				Url:    repoMeta.URL,
-				Branch: repoMeta.Branch,
-				Path:   repoMeta.Path,
+				ProjectName: repoMeta.Name,
+				Url:         repoMeta.URL,
+				Branch:      repoMeta.Branch,
+				Path:        repoMeta.Path,
 			},
 		}
 

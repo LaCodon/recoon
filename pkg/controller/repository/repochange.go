@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/lacodon/recoon/pkg/api"
+	metav1 "github.com/lacodon/recoon/pkg/api/v1/meta"
+	projectv1 "github.com/lacodon/recoon/pkg/api/v1/project"
 	repositoryv1 "github.com/lacodon/recoon/pkg/api/v1/repository"
 	"github.com/lacodon/recoon/pkg/gitrepo"
 	"github.com/lacodon/recoon/pkg/store"
@@ -63,16 +65,62 @@ func (c *Controller) handleRepoCreate(ctx context.Context, event store.Event) er
 func (c *Controller) handleRepoUpdate(ctx context.Context, event store.Event) error {
 	apiRepo := event.Object.(*repositoryv1.Repository)
 
-	if apiRepo.Status == nil {
+	if apiRepo.Status == nil || apiRepo.Spec == nil {
 		return nil
 	}
 
-	_, err := gitrepo.NewReadOnlyGitRepository(apiRepo.Status.LocalPath)
-	if err != nil {
-		return err
+	project := &projectv1.Project{}
+	if err := c.api.Get(metav1.NamespaceName{
+		Name:      apiRepo.Spec.ProjectName,
+		Namespace: "project-" + apiRepo.Spec.ProjectName,
+	}, project); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			project = &projectv1.Project{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      apiRepo.Spec.ProjectName,
+					Namespace: "project-" + apiRepo.Spec.ProjectName,
+				},
+				Spec: &projectv1.Spec{
+					LocalPath:   apiRepo.Status.LocalPath,
+					CommitId:    apiRepo.Status.CurrentCommitId,
+					ComposePath: apiRepo.Spec.Path,
+					Repo: metav1.ObjectRef{
+						Version:   apiRepo.Version,
+						Kind:      apiRepo.Kind,
+						Namespace: apiRepo.Namespace,
+						Name:      apiRepo.Name,
+					},
+				},
+			}
+			return c.api.Create(project)
+		} else {
+			return errors.WithMessage(err, "failed to get project")
+		}
 	}
 
-	// TODO: create / update / delete project objects
+	if project.Spec.CommitId != apiRepo.Status.CurrentCommitId {
+		project.Spec.CommitId = apiRepo.Status.CurrentCommitId
+		project.Spec.ComposePath = apiRepo.Spec.Path
+		if err := c.api.Update(project); err != nil {
+			return errors.WithMessage(err, "failed to update project")
+		}
+	}
+
+	//workingDir := filepath.Join(apiRepo.Status.LocalPath, apiRepo.Spec.Path)
+	//composeProject, err := composecli.ProjectFromOptions(&composecli.ProjectOptions{
+	//	WorkingDir:  workingDir,
+	//	ConfigPaths: []string{filepath.Join(workingDir, "docker-compose.yml")},
+	//	Environment: make(map[string]string),
+	//	EnvFiles:    []string{},
+	//})
+	//if err != nil {
+	//	return errors.WithMessage(err, "failed to load docker-compose.yml")
+	//}
+	//
+	//logrus.Println(composeProject.Name)
+	//
+	//yml, _ := yaml.Marshal(composeProject)
+	//logrus.Println(string(yml))
 
 	return nil
 }
@@ -102,7 +150,14 @@ func (c *Controller) handleRepoDelete(event store.Event) error {
 		return os.RemoveAll(oldRepo.Status.LocalPath)
 	}
 
-	// Todo: delete project objects
+	if oldRepo.Spec == nil {
+		return nil
+	}
+
+	_ = c.api.Delete(projectv1.VersionKind, metav1.NamespaceName{
+		Name:      oldRepo.Spec.ProjectName,
+		Namespace: "project-" + oldRepo.Spec.ProjectName,
+	})
 
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/lacodon/recoon/pkg/config"
 	"github.com/lacodon/recoon/pkg/controller/configrepo"
 	"github.com/lacodon/recoon/pkg/controller/repository"
+	"github.com/lacodon/recoon/pkg/puller"
 	"github.com/lacodon/recoon/pkg/runner"
 	"github.com/lacodon/recoon/pkg/sshauth"
 	"github.com/lacodon/recoon/pkg/store"
@@ -42,6 +43,7 @@ func rootCmdRun(cmd *cobra.Command, _ []string) error {
 	}
 
 	apiWatcher := watcher.NewDefaultWatcher(api.EventsChan())
+	repoPuller := puller.NewPuller(api)
 	repoConfigController := configrepo.NewController(config.Cfg.ConfigRepo.CloneURL, config.Cfg.ConfigRepo.BranchName, api)
 	repositoryController := repository.NewController(apiWatcher, api)
 
@@ -53,6 +55,7 @@ func rootCmdRun(cmd *cobra.Command, _ []string) error {
 	taskManager.AddTask(repositoryController)
 	taskManager.AddTask(repoConfigController)
 	taskManager.AddTask(apiWatcher)
+	taskManager.AddTask(repoPuller)
 	taskManager.StartAll(ctx)
 
 	select {
