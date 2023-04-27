@@ -8,6 +8,7 @@ import (
 	"github.com/lacodon/recoon/pkg/gitrepo"
 	"github.com/lacodon/recoon/pkg/store"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -38,7 +39,7 @@ func (c *Controller) Run(ctx context.Context) error {
 
 	for {
 		if err := c.runOnce(ctx); err != nil {
-			return err
+			logrus.WithError(err).Warn("failed to update config repo")
 		}
 
 		timer := time.NewTimer(config.Cfg.ConfigRepo.ReconciliationIntervall)
