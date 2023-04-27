@@ -52,6 +52,9 @@ func (c *Controller) Run(ctx context.Context) error {
 			case "stop":
 				// container stopped
 				fallthrough
+			case "die":
+				// container died
+				fallthrough
 			case "destroy":
 				// container deleted
 				if err := c.triggerReconcile(ctx, projectName); err != nil {
