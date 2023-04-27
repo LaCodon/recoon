@@ -12,13 +12,22 @@ import (
 )
 
 func Up(projectName, directory string) error {
-	composeCmd := cmd.NewCmd("docker", "compose", "-p", projectName, "up", "-d", "--build", "--quiet-pull", "--remove-orphans")
+	buildCmd := cmd.NewCmd("docker", "compose", "build", "--pull", "--progress", "plain")
+	buildCmd.Dir = directory
+	buildChan := buildCmd.Start()
+	buildEvent := <-buildChan
+	if buildEvent.Exit != 0 {
+		return fmt.Errorf("error during docker-compose build: %s ;;; %s", strings.Join(buildEvent.Stdout, "\n"), strings.Join(buildEvent.Stderr, "\n"))
+	}
+
+	composeCmd := cmd.NewCmd("docker", "compose", "-p", projectName, "up", "-d", "--quiet-pull", "--remove-orphans")
 	composeCmd.Dir = directory
 	composeChan := composeCmd.Start()
 	finalEvent := <-composeChan
 	if finalEvent.Exit != 0 {
 		return fmt.Errorf("error during docker-compose up: %s ;;; %s", strings.Join(finalEvent.Stdout, "\n"), strings.Join(finalEvent.Stderr, "\n"))
 	}
+
 	logrus.WithField("project", projectName).Debug("successfully ran docker-compose up")
 	return nil
 }
