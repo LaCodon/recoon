@@ -16,16 +16,17 @@ func MakeLocalPath(cloneUrl, branchName string) string {
 func MakeAPIName(cloneUrl, branchName string, suffixes ...string) string {
 	replacer := strings.NewReplacer(
 		"git@", "",
-		"/", ":",
+		"/", "#",
+		":", "#",
 		".git", "")
 
-	name := cloneUrl + ":" + branchName
+	name := cloneUrl + "#" + branchName
 
 	if suffixes != nil {
 		suffixStr := strings.Join(suffixes, "#")
 		suffixStr = strings.ReplaceAll(suffixStr, "/", "+")
-		name += ":" + suffixStr
+		name += "#" + suffixStr
 	}
 
-	return strings.Trim(replacer.Replace(name), ":+")
+	return strings.Trim(replacer.Replace(name), "#+")
 }

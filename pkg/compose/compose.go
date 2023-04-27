@@ -1,7 +1,11 @@
 package compose
 
 import (
+	"context"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	dockerclient "github.com/docker/docker/client"
 	"github.com/go-cmd/cmd"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -28,4 +32,16 @@ func Down(projectName string) error {
 	}
 	logrus.WithField("project", projectName).Debug("successfully ran docker-compose down")
 	return nil
+}
+
+func Status(ctx context.Context, projectName string) ([]types.Container, error) {
+	client, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithAPIVersionNegotiation())
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to docker socket: %s", err.Error())
+	}
+
+	return client.ContainerList(ctx, types.ContainerListOptions{
+		All:     true,
+		Filters: filters.NewArgs(filters.Arg("label", fmt.Sprintf("com.docker.compose.project=%s", projectName))),
+	})
 }

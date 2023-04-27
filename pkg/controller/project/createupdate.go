@@ -29,7 +29,20 @@ func (c *Controller) handleProjectCreateUpdate(ctx context.Context, event store.
 		}
 	}
 
-	if project.Status.LastAppliedCommitId == project.Spec.CommitId {
+	projectContainers, err := compose.Status(ctx, project.Name)
+	if err != nil {
+		return err
+	}
+
+	requireRestart := false
+	for _, container := range projectContainers {
+		if container.State != "running" {
+			requireRestart = true
+			break
+		}
+	}
+
+	if !requireRestart && project.Status.LastAppliedCommitId == project.Spec.CommitId {
 		return nil
 	}
 
