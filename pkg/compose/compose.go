@@ -3,8 +3,8 @@ package compose
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
+	dockertypes "github.com/docker/docker/api/types"
+	dockerfilters "github.com/docker/docker/api/types/filters"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/go-cmd/cmd"
 	"github.com/sirupsen/logrus"
@@ -34,14 +34,14 @@ func Down(projectName string) error {
 	return nil
 }
 
-func Status(ctx context.Context, projectName string) ([]types.Container, error) {
+func Status(ctx context.Context, projectName string) ([]dockertypes.Container, error) {
 	client, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to docker socket: %s", err.Error())
 	}
 
-	return client.ContainerList(ctx, types.ContainerListOptions{
+	return client.ContainerList(ctx, dockertypes.ContainerListOptions{
 		All:     true,
-		Filters: filters.NewArgs(filters.Arg("label", fmt.Sprintf("com.docker.compose.project=%s", projectName))),
+		Filters: dockerfilters.NewArgs(dockerfilters.Arg("label", fmt.Sprintf("com.docker.compose.project=%s", projectName))),
 	})
 }
