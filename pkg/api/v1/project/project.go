@@ -37,6 +37,7 @@ type Spec struct {
 type Status struct {
 	Conditions          conditionv1.Conditions `json:"conditions,omitempty"`
 	LastAppliedCommitId string                 `json:"lastAppliedCommitId"`
+	ContainerCount      int                    `json:"containerCount"`
 }
 
 func (p *Project) DeepCopy() api.Object {
@@ -58,6 +59,7 @@ func (p *Project) DeepCopy() api.Object {
 		n.Status = &Status{
 			Conditions:          p.Status.Conditions.DeepCopy(),
 			LastAppliedCommitId: p.Status.LastAppliedCommitId,
+			ContainerCount:      p.Status.ContainerCount,
 		}
 	}
 

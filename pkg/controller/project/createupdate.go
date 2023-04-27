@@ -16,6 +16,9 @@ import (
 func (c *Controller) handleProjectCreateUpdate(ctx context.Context, event store.Event) error {
 	project := &projectv1.Project{}
 	if err := c.api.Get(event.ObjectNamespaceName, project); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return nil
+		}
 		return err
 	}
 
@@ -42,7 +45,15 @@ func (c *Controller) handleProjectCreateUpdate(ctx context.Context, event store.
 		}
 	}
 
-	if !requireRestart && project.Status.LastAppliedCommitId == project.Spec.CommitId {
+	if project.Status.LastAppliedCommitId != project.Spec.CommitId {
+		requireRestart = true
+	}
+
+	if project.Status.ContainerCount != len(projectContainers) {
+		requireRestart = true
+	}
+
+	if !requireRestart {
 		return nil
 	}
 
@@ -66,6 +77,10 @@ func (c *Controller) handleProjectCreateUpdate(ctx context.Context, event store.
 			Message:            "docker-compose up was successful",
 		}
 	}
+
+	project.Status.ContainerCount = len(projectContainers)
+
+	logrus.WithField("status", project.Status).Debug("update project")
 
 	if err := c.api.Update(project); err != nil {
 		if !errors.Is(err, store.ErrNotFound) {

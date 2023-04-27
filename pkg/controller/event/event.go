@@ -8,6 +8,7 @@ import (
 	metav1 "github.com/lacodon/recoon/pkg/api/v1/meta"
 	projectv1 "github.com/lacodon/recoon/pkg/api/v1/project"
 	"github.com/lacodon/recoon/pkg/store"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -75,6 +76,10 @@ func (c *Controller) triggerReconcile(ctx context.Context, projectName string) e
 		Name:      projectName,
 		Namespace: "project-" + projectName,
 	}, project); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			// project deleted, don't reconcile
+			return nil
+		}
 		return err
 	}
 
