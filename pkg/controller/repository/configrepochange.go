@@ -28,7 +28,11 @@ func (c *Controller) handleConfigRepoChangeEvent(ctx context.Context, event stor
 		return errors.New("deleted config-repo object, this should not happen!")
 	}
 
-	apiRepo := event.Object.(*repositoryv1.Repository)
+	apiRepo := &repositoryv1.Repository{}
+	if err := c.api.Get(event.ObjectNamespaceName, apiRepo); err != nil {
+		return err
+	}
+
 	if apiRepo.Spec == nil {
 		return nil
 	}
@@ -102,6 +106,7 @@ func (c *Controller) handleConfigRepoChangeEvent(ctx context.Context, event stor
 	}
 
 	for _, oldRepo := range currentRepos {
+		logrus.Debug("delete repo from api")
 		_ = c.api.Delete(oldRepo.GetVersionKind(), oldRepo.GetNamespaceName())
 	}
 

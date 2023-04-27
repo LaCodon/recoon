@@ -28,7 +28,10 @@ func (c *Controller) handleRepoChangeEvent(ctx context.Context, event store.Even
 }
 
 func (c *Controller) handleRepoCreate(ctx context.Context, event store.Event) error {
-	apiRepo := event.Object.(*repositoryv1.Repository)
+	apiRepo := &repositoryv1.Repository{}
+	if err := c.api.Get(event.ObjectNamespaceName, apiRepo); err != nil {
+		return err
+	}
 
 	if apiRepo.Spec == nil {
 		return nil
@@ -63,7 +66,10 @@ func (c *Controller) handleRepoCreate(ctx context.Context, event store.Event) er
 }
 
 func (c *Controller) handleRepoUpdate(ctx context.Context, event store.Event) error {
-	apiRepo := event.Object.(*repositoryv1.Repository)
+	apiRepo := &repositoryv1.Repository{}
+	if err := c.api.Get(event.ObjectNamespaceName, apiRepo); err != nil {
+		return err
+	}
 
 	if apiRepo.Spec == nil {
 		return nil
@@ -114,7 +120,7 @@ func (c *Controller) handleRepoUpdate(ctx context.Context, event store.Event) er
 }
 
 func (c *Controller) handleRepoDelete(event store.Event) error {
-	oldData := event.Object.(*api.GenericObject).Data
+	oldData := event.PreviousObject.(*api.GenericObject).Data
 
 	oldRepo := &repositoryv1.Repository{}
 	if err := json.Unmarshal(oldData, oldRepo); err != nil {

@@ -180,8 +180,9 @@ func (d *DefaultStore) Create(object api.Object) error {
 	}
 
 	d.eventsChan <- Event{
-		Type:   EventTypeAdd,
-		Object: object.DeepCopy(),
+		Type:                EventTypeAdd,
+		ObjectNamespaceName: object.GetNamespaceName(),
+		ObjectVersionKind:   object.GetVersionKind(),
 	}
 
 	return nil
@@ -242,9 +243,10 @@ func (d *DefaultStore) Update(object api.Object) error {
 	}
 
 	d.eventsChan <- Event{
-		Type:           EventTypeUpdate,
-		PreviousObject: currentObj.DeepCopy(),
-		Object:         object.DeepCopy(),
+		Type:                EventTypeUpdate,
+		PreviousObject:      currentObj.DeepCopy(),
+		ObjectNamespaceName: object.GetNamespaceName(),
+		ObjectVersionKind:   object.GetVersionKind(),
 	}
 
 	return nil
@@ -271,7 +273,7 @@ func (d *DefaultStore) Delete(vk metav1.VersionKind, namespaceName metav1.Namesp
 
 	d.eventsChan <- Event{
 		Type: EventTypeDelete,
-		Object: &api.GenericObject{
+		PreviousObject: &api.GenericObject{
 			TypeMeta: metav1.TypeMeta{
 				Version: vk.Version,
 				Kind:    vk.Kind,
@@ -282,6 +284,8 @@ func (d *DefaultStore) Delete(vk metav1.VersionKind, namespaceName metav1.Namesp
 			},
 			Data: data,
 		},
+		ObjectVersionKind:   vk,
+		ObjectNamespaceName: namespaceName,
 	}
 
 	return nil

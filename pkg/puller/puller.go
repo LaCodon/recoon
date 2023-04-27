@@ -78,14 +78,18 @@ func (p *Puller) runOnce(ctx context.Context) error {
 	for _, repos := range repoMap {
 		// only pull once but update all api objects
 		pullRepo := repos[0]
-		localRepo, err := gitrepo.NewGitRepository(ctx, pullRepo.Spec.Url, pullRepo.Spec.Branch)
+
+		ctxTimeout, cancel := context.WithTimeout(ctx, 2*time.Minute)
+		localRepo, err := gitrepo.NewGitRepository(ctxTimeout, pullRepo.Spec.Url, pullRepo.Spec.Branch)
 		if err != nil {
 			logrus.WithError(err).Warn("failed to init git repo")
+			cancel()
 			continue
 		}
 
-		if err := localRepo.Pull(ctx); err != nil {
+		if err := localRepo.Pull(ctxTimeout); err != nil {
 			logrus.WithError(err).Warn("failed to pull repo")
+			cancel()
 			continue
 		}
 
@@ -102,6 +106,8 @@ func (p *Puller) runOnce(ctx context.Context) error {
 				continue
 			}
 		}
+
+		cancel()
 	}
 
 	return nil

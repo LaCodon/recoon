@@ -7,13 +7,17 @@ import (
 	projectv1 "github.com/lacodon/recoon/pkg/api/v1/project"
 	"github.com/lacodon/recoon/pkg/compose"
 	"github.com/lacodon/recoon/pkg/store"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"path/filepath"
 	"time"
 )
 
 func (c *Controller) handleProjectCreateUpdate(ctx context.Context, event store.Event) error {
-	project := event.Object.(*projectv1.Project)
+	project := &projectv1.Project{}
+	if err := c.api.Get(event.ObjectNamespaceName, project); err != nil {
+		return err
+	}
 
 	if project.Spec == nil {
 		return nil
@@ -50,7 +54,13 @@ func (c *Controller) handleProjectCreateUpdate(ctx context.Context, event store.
 		}
 	}
 
-	return c.api.Update(project)
+	if err := c.api.Update(project); err != nil {
+		if !errors.Is(err, store.ErrNotFound) {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func updateProjectFailureConditions(project *projectv1.Project) {

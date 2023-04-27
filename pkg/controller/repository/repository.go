@@ -46,9 +46,9 @@ func (c *Controller) Run(ctx context.Context) error {
 }
 
 func (c *Controller) handleEvent(ctx context.Context, event store.Event) error {
-	switch event.Object.GetVersionKind() {
+	switch event.ObjectVersionKind {
 	case repositoryv1.VersionKind:
-		if event.Object.GetName() == configrepo.ConfigRepoName && event.Object.GetNamespace() == "recoon-system" {
+		if event.ObjectNamespaceName.Name == configrepo.ConfigRepoName && event.ObjectNamespaceName.Namespace == "recoon-system" {
 			c.retryer.RetryOnError(ctx, event, c.handleConfigRepoChangeEvent)
 			return nil
 		} else {
@@ -56,7 +56,7 @@ func (c *Controller) handleEvent(ctx context.Context, event store.Event) error {
 			return nil
 		}
 	default:
-		return fmt.Errorf("unknown event object kind: %s/%s", event.Object.GetVersionKind(), event.Object.GetNamespaceName())
+		return fmt.Errorf("unknown event object kind: %s/%s", event.ObjectVersionKind, event.ObjectNamespaceName)
 	}
 }
 

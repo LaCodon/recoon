@@ -9,12 +9,9 @@ import (
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/go-cmd/cmd"
-	metav1 "github.com/lacodon/recoon/pkg/api/v1/meta"
-	repositoryv1 "github.com/lacodon/recoon/pkg/api/v1/repository"
 	"github.com/lacodon/recoon/pkg/config"
 	"github.com/lacodon/recoon/pkg/gitrepo"
 	"github.com/lacodon/recoon/pkg/sshauth"
-	"github.com/lacodon/recoon/pkg/store"
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -58,21 +55,21 @@ func main() {
 	logrus.Debug(string(data))
 	_ = file.Close()
 
-	api, _ := store.NewDefaultStore()
-	_ = api.Set(&repositoryv1.Repository{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "config-repo",
-			Namespace: "recoon-system",
-		},
-		Spec: &repositoryv1.Spec{
-			Url:    cloneUrl,
-			Branch: branchName,
-		},
-		Status: &repositoryv1.Status{
-			LocalPath:       repo.GetLocalPath(),
-			CurrentCommitId: repo.GetCurrentCommitId(),
-		},
-	})
+	//api, _ := store.NewDefaultStore()
+	//_ = api.Set(&repositoryv1.Repository{
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Name:      "config-repo",
+	//		Namespace: "recoon-system",
+	//	},
+	//	Spec: &repositoryv1.Spec{
+	//		Url:    cloneUrl,
+	//		Branch: branchName,
+	//	},
+	//	Status: &repositoryv1.Status{
+	//		LocalPath:       repo.GetLocalPath(),
+	//		CurrentCommitId: repo.GetCurrentCommitId(),
+	//	},
+	//})
 }
 
 func _main() {

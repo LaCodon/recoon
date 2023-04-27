@@ -36,7 +36,7 @@ func (d *defaultRetryer) RetryOnError(ctx context.Context, event store.Event, ha
 		case <-ctx.Done():
 			return
 		case <-time.After(5 * time.Second):
-			logrus.WithField("type", event.Type).WithField("nn", event.Object.GetNamespaceName()).Debug("retrying event...")
+			logrus.WithField("type", event.Type).WithField("nn", event.ObjectNamespaceName).Debug("retrying event...")
 			d.eventChan <- event
 		}
 	}()

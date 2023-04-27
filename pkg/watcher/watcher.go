@@ -4,6 +4,7 @@ import (
 	"context"
 	metav1 "github.com/lacodon/recoon/pkg/api/v1/meta"
 	"github.com/lacodon/recoon/pkg/store"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -69,8 +70,14 @@ func (w *DefaultWatcher) fanOut(event store.Event) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
+	logrus.
+		WithField("eventType", event.Type).
+		WithField("vk", event.ObjectVersionKind).
+		WithField("nn", event.ObjectNamespaceName).
+		Debug("fanOut event")
+
 	for _, sub := range w.subs {
-		if w.shouldCollect(event.Object.GetVersionKind(), sub.Filter) {
+		if w.shouldCollect(event.ObjectVersionKind, sub.Filter) {
 			sub.Chan <- event.DeepCopy()
 		}
 	}
