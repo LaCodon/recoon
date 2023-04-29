@@ -8,6 +8,7 @@ import (
 	dockerclient "github.com/docker/docker/client"
 	"github.com/go-cmd/cmd"
 	"github.com/sirupsen/logrus"
+	"io"
 	"strings"
 )
 
@@ -53,4 +54,30 @@ func Status(ctx context.Context, projectName string) ([]dockertypes.Container, e
 		All:     true,
 		Filters: dockerfilters.NewArgs(dockerfilters.Arg("label", fmt.Sprintf("com.docker.compose.project=%s", projectName))),
 	})
+}
+
+func Logs(ctx context.Context, containerId string, since string, tail string) (string, error) {
+	if tail == "" {
+		tail = "all"
+	}
+
+	client, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithAPIVersionNegotiation())
+	if err != nil {
+		return "nil", fmt.Errorf("failed to connect to docker socket: %s", err.Error())
+	}
+
+	reader, err := client.ContainerLogs(ctx, containerId, dockertypes.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Since:      since,
+		Timestamps: true,
+		Tail:       tail,
+	})
+	if err != nil {
+		return "", err
+	}
+	defer reader.Close()
+
+	logs, err := io.ReadAll(reader)
+	return string(logs), err
 }

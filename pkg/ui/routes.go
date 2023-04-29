@@ -22,4 +22,8 @@ func (u *UI) setupRoutes(e *echo.Echo) {
 	projectGroup.GET("", handler.ProjectList(u.api))
 	projectGroup.GET("/:namespace", handler.ProjectList(u.api))
 	projectGroup.GET("/:namespace/:name", handler.ProjectGet(u.api))
+
+	containerGroup := apiGroup.Group("/container")
+	containerGroup.GET("/:project", handler.ContainerList(u.api))
+	containerGroup.GET("/:project/:container", handler.ContainerGetLogs(u.api))
 }
