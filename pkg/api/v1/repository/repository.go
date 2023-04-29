@@ -14,8 +14,8 @@ func init() {
 }
 
 type Repository struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
 
 	Spec   *Spec   `json:"spec,omitempty"`
 	Status *Status `json:"status,omitempty"`
