@@ -50,9 +50,14 @@ func Status(ctx context.Context, projectName string) ([]dockertypes.Container, e
 		return nil, fmt.Errorf("failed to connect to docker socket: %s", err.Error())
 	}
 
+	var filters dockerfilters.Args
+	if projectName != "" {
+		filters = dockerfilters.NewArgs(dockerfilters.Arg("label", fmt.Sprintf("com.docker.compose.project=%s", projectName)))
+	}
+
 	return client.ContainerList(ctx, dockertypes.ContainerListOptions{
 		All:     true,
-		Filters: dockerfilters.NewArgs(dockerfilters.Arg("label", fmt.Sprintf("com.docker.compose.project=%s", projectName))),
+		Filters: filters,
 	})
 }
 

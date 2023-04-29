@@ -8,30 +8,36 @@ import (
 	projectv1 "github.com/lacodon/recoon/pkg/api/v1/project"
 	"github.com/lacodon/recoon/pkg/compose"
 	"github.com/lacodon/recoon/pkg/store"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type logLine struct {
+type LogLine struct {
 	Timestamp time.Time
 	Message   string
 }
 
 func ContainerList(api store.Getter) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if c.Param("project") == "" {
+			containers, err := compose.Status(c.Request().Context(), "")
+			if err != nil {
+				return err
+			}
+
+			return c.JSON(http.StatusOK, containers)
+		}
+
 		project := &projectv1.Project{}
 		if err := api.Get(metav1.NamespaceName{
 			Name:      c.Param("project"),
 			Namespace: "project-" + c.Param("project"),
 		}, project); err != nil {
 			if errors.Is(err, store.ErrNotFound) {
-				logrus.Warn("adfsdfdf")
 				return c.String(http.StatusNotFound, "not found")
 			}
-
 			return err
 		}
 
@@ -51,11 +57,14 @@ func ContainerGetLogs(api store.Getter) echo.HandlerFunc {
 
 		logs, err := compose.Logs(c.Request().Context(), containerId, since, "60")
 		if err != nil {
+			if strings.Contains(err.Error(), "No such container") {
+				return c.String(http.StatusNotFound, "container not found")
+			}
 			return err
 		}
 
 		rawLines := strings.Split(logs, "\n")
-		logLines := make([]logLine, 0, len(rawLines))
+		logLines := make([]LogLine, 0, len(rawLines))
 		for _, l := range rawLines {
 			parts := strings.SplitAfterN(l, "Z", 2)
 			if len(parts) != 2 {
@@ -73,7 +82,7 @@ func ContainerGetLogs(api store.Getter) echo.HandlerFunc {
 			ts, _ := time.Parse(time.RFC3339Nano, rawTs)
 			message := parts[1]
 
-			logLines = append(logLines, logLine{
+			logLines = append(logLines, LogLine{
 				Timestamp: ts,
 				Message:   message[1:],
 			})

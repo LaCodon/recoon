@@ -40,6 +40,9 @@ func getCmdRun(cmd *cobra.Command, args []string) error {
 	case "proj":
 		return getProject(args)
 
+	case "container":
+		return getContainer(args)
+
 	default:
 		return fmt.Errorf("unknown type")
 	}
@@ -114,7 +117,7 @@ func getProject(args []string) error {
 				}
 			}
 
-			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n",
 				project.GetName(), lastAppliedCommit, status, transitionTime)
 		}
 
@@ -130,4 +133,28 @@ func getProject(args []string) error {
 	fmt.Print(string(out))
 
 	return nil
+}
+
+func getContainer(args []string) error {
+	c := client.New("http://localhost:3680/api/v1")
+
+	projectName := ""
+	if len(args) == 2 {
+		projectName = args[1]
+	}
+
+	containers, err := c.GetContainers(projectName)
+	if err != nil {
+		return err
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	_, _ = fmt.Fprintln(w, "ID\tPROJECT\tSERVICE\tIMAGE\tDIGEST\tSTATE\tSTATUS\t")
+
+	for _, container := range containers {
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t\n",
+			container.ID[:20], container.Labels["com.docker.compose.project"], container.Labels["com.docker.compose.service"], container.Image, container.ImageID, container.State, container.Status)
+	}
+
+	return w.Flush()
 }
