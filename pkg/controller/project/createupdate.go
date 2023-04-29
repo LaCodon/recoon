@@ -59,6 +59,7 @@ func (c *Controller) handleProjectCreateUpdate(ctx context.Context, event store.
 
 	project.Status.LastAppliedCommitId = project.Spec.CommitId
 
+	project.Status.Conditions = make(map[conditionv1.Type]conditionv1.Condition)
 	if err := compose.Up(project.Name, filepath.Join(project.Spec.LocalPath, project.Spec.ComposePath)); err != nil {
 		project.Status.Conditions[projectv1.ConditionFailure] = conditionv1.Condition{
 			LastTransitionTime: time.Now(),
@@ -66,11 +67,16 @@ func (c *Controller) handleProjectCreateUpdate(ctx context.Context, event store.
 			Message:            err.Error(),
 		}
 
-		updateProjectFailureConditions(project)
+		if err := checkComposeSchema(project); err != nil {
+			project.Status.Conditions[projectv1.ConditionSchema] = conditionv1.Condition{
+				LastTransitionTime: time.Now(),
+				Status:             "invalid",
+				Message:            err.Error(),
+			}
+		}
 
 		logrus.WithError(err).WithField("project", project.Name).Warn("failed to run docker-compose")
 	} else {
-		project.Status.Conditions = make(map[conditionv1.Type]conditionv1.Condition)
 		project.Status.Conditions[projectv1.ConditionSuccess] = conditionv1.Condition{
 			LastTransitionTime: time.Now(),
 			Status:             "success",
@@ -91,7 +97,7 @@ func (c *Controller) handleProjectCreateUpdate(ctx context.Context, event store.
 	return nil
 }
 
-func updateProjectFailureConditions(project *projectv1.Project) {
+func checkComposeSchema(project *projectv1.Project) error {
 	workingDir := filepath.Join(project.Spec.LocalPath, project.Spec.ComposePath)
 	_, err := composecli.ProjectFromOptions(&composecli.ProjectOptions{
 		WorkingDir:  workingDir,
@@ -99,12 +105,6 @@ func updateProjectFailureConditions(project *projectv1.Project) {
 		Environment: make(map[string]string),
 		EnvFiles:    []string{},
 	})
-	if err != nil {
-		project.Status.Conditions[projectv1.ConditionSchema] = conditionv1.Condition{
-			LastTransitionTime: time.Now(),
-			Status:             "invalid",
-			Message:            err.Error(),
-		}
-	}
 
+	return err
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/lacodon/recoon/pkg/runner"
 	"github.com/lacodon/recoon/pkg/sshauth"
 	"github.com/lacodon/recoon/pkg/store"
+	"github.com/lacodon/recoon/pkg/ui"
 	"github.com/lacodon/recoon/pkg/watcher"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -50,12 +51,14 @@ func rootCmdRun(cmd *cobra.Command, _ []string) error {
 	repositoryController := repository.NewController(apiWatcher, api)
 	projectController := project.NewController(apiWatcher, api)
 	eventController := event.NewController(api)
+	recoonUI := ui.New(api)
 
 	ctx, cancel := context.WithCancel(cmd.Context())
 
 	// run subsystems
 	logrus.Debugf("start all subsystems")
 	taskManager := new(runner.Runner)
+	taskManager.AddTask(recoonUI)
 	taskManager.AddTask(repositoryController)
 	taskManager.AddTask(repoConfigController)
 	taskManager.AddTask(projectController)
