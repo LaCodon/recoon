@@ -7,6 +7,7 @@ type Config struct {
 	SSH        SSH
 	ConfigRepo ConfigRepo
 	AppRepo    AppRepo
+	UI         UI
 }
 
 type Store struct {
@@ -16,6 +17,7 @@ type Store struct {
 
 type SSH struct {
 	KeyDir string
+	Host   string
 }
 
 type ConfigRepo struct {
@@ -26,6 +28,10 @@ type ConfigRepo struct {
 
 type AppRepo struct {
 	ReconciliationIntervall time.Duration
+}
+
+type UI struct {
+	Port int
 }
 
 var Cfg Config
@@ -39,6 +45,7 @@ func init() {
 		},
 		SSH: SSH{
 			KeyDir: "./.data/",
+			Host:   "localhost,127.0.0.1",
 		},
 		ConfigRepo: ConfigRepo{
 			CloneURL:                "git@github.com:LaCodon/recoon-test.git",
@@ -47,6 +54,9 @@ func init() {
 		},
 		AppRepo: AppRepo{
 			ReconciliationIntervall: 5 * time.Second,
+		},
+		UI: UI{
+			Port: 3680,
 		},
 	}
 }

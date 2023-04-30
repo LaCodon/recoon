@@ -43,7 +43,7 @@ func rootCmdRun(cmd *cobra.Command, _ []string) error {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	logrus.Println(sshauth.GetPublicKeyOpenSshFormat(config.Cfg.SSH.KeyDir))
+	logrus.Println(sshauth.GetPublicKeyOpenSSHFormat(config.Cfg.SSH.KeyDir))
 
 	apiWatcher := watcher.NewDefaultWatcher(api.EventsChan())
 	repoPuller := puller.NewPuller(api)
