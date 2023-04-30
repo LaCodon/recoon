@@ -16,12 +16,16 @@ func initRecoon(api *store.DefaultStore) error {
 		return errors.WithMessage(err, "failed to init ssh keys")
 	}
 
-	if err := initsystem.InitStore(api); err != nil {
-		return errors.WithMessage(err, "failed to init store")
-	}
-
 	if err := initsystem.InitTLS(); err != nil {
 		return errors.WithMessage(err, "failed to init TLS certs")
+	}
+
+	if err := initsystem.InitClientConfig(); err != nil {
+		return errors.WithMessage(err, "failed to create client config json")
+	}
+
+	if err := initsystem.InitStore(api); err != nil {
+		return errors.WithMessage(err, "failed to init store")
 	}
 
 	return nil

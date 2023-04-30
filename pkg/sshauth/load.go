@@ -56,8 +56,8 @@ func GetPublicKeyOpenSSHFormat(path string) (string, error) {
 }
 
 // GetPrivateKey from file
-func GetPrivateKey(path string) (*ecdsa.PrivateKey, error) {
-	data, err := os.ReadFile(filepath.Join(path, PrivateKeyFile))
+func GetPrivateKey(filePath string) (*ecdsa.PrivateKey, error) {
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load private key file: %s", err.Error())
 	}

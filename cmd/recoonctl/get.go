@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	projectv1 "github.com/lacodon/recoon/pkg/api/v1/project"
-	"github.com/lacodon/recoon/pkg/client"
 	"github.com/lacodon/recoon/pkg/controller/configrepo"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -24,7 +24,7 @@ func init() {
 
 func getCmdRun(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("must pass object type")
+		return errors.New("must pass object type")
 	}
 
 	switch args[0] {
@@ -44,15 +44,13 @@ func getCmdRun(cmd *cobra.Command, args []string) error {
 		return getContainer(args)
 
 	default:
-		return fmt.Errorf("unknown type")
+		return errors.New("unknown type")
 	}
 }
 
 func getRepository(args []string) error {
-	c := client.New("http://localhost:3680/api/v1")
-
 	if len(args) == 1 {
-		repos, err := c.GetRepositories()
+		repos, err := apiClient.GetRepositories()
 		if err != nil {
 			return err
 		}
@@ -73,7 +71,7 @@ func getRepository(args []string) error {
 		return w.Flush()
 	}
 
-	repo, err := c.GetRepository(args[1])
+	repo, err := apiClient.GetRepository(args[1])
 	if err != nil {
 		return err
 	}
@@ -85,10 +83,8 @@ func getRepository(args []string) error {
 }
 
 func getProject(args []string) error {
-	c := client.New("http://localhost:3680/api/v1")
-
 	if len(args) == 1 {
-		projects, err := c.GetProjects()
+		projects, err := apiClient.GetProjects()
 		if err != nil {
 			return err
 		}
@@ -124,7 +120,7 @@ func getProject(args []string) error {
 		return w.Flush()
 	}
 
-	project, err := c.GetProject(args[1])
+	project, err := apiClient.GetProject(args[1])
 	if err != nil {
 		return err
 	}
@@ -136,14 +132,12 @@ func getProject(args []string) error {
 }
 
 func getContainer(args []string) error {
-	c := client.New("http://localhost:3680/api/v1")
-
 	projectName := ""
 	if len(args) == 2 {
 		projectName = args[1]
 	}
 
-	containers, err := c.GetContainers(projectName)
+	containers, err := apiClient.GetContainers(projectName)
 	if err != nil {
 		return err
 	}

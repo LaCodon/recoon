@@ -2,7 +2,6 @@ package event
 
 import (
 	"context"
-	"fmt"
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	dockerclient "github.com/docker/docker/client"
@@ -27,7 +26,7 @@ func NewController(api store.GetterSetter) *Controller {
 func (c *Controller) Run(ctx context.Context) error {
 	cli, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithAPIVersionNegotiation())
 	if err != nil {
-		return fmt.Errorf("failed to connect to docker daemon: %s", err.Error())
+		return errors.WithMessage(err, "failed to connect to docker daemon")
 	}
 
 	eventsCh, errCh := cli.Events(ctx, dockertypes.EventsOptions{})

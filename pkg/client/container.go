@@ -21,6 +21,10 @@ func (c *Client) GetContainers(projectName string) ([]*dockertypes.Container, er
 		return nil, err
 	}
 
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("%s: %s", resp.Status(), string(resp.Body()))
+	}
+
 	return *resp.Result().(*[]*dockertypes.Container), nil
 }
 

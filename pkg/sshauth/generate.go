@@ -8,6 +8,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"io"
 	"math/big"
@@ -19,17 +20,16 @@ import (
 )
 
 const (
-	PublicKeyFile  = "public.key"
-	PrivateKeyFile = "private.key"
-	ServerCertFile = "server.cert"
-	ClientCertFile = "client.cert"
+	PublicKeyFile        = "public.key"
+	PrivateKeyFile       = "private.key"
+	ServerCertFile       = "server.cert"
+	ClientPublicKeyFile  = "client-public.key"
+	ClientPrivateKeyFile = "client-private.key"
+	ClientCertFile       = "client.cert"
 )
 
 // CreateKeypairIfNotExists creates a new SSH key pair if none could be found at the given path or if force is true
-func CreateKeypairIfNotExists(path string, force bool) error {
-	privKeyFilePath := filepath.Join(path, PrivateKeyFile)
-	pubKeyFilePath := filepath.Join(path, PublicKeyFile)
-
+func CreateKeypairIfNotExists(privKeyFilePath, pubKeyFilePath string, force bool) error {
 	if !force && isExistent(privKeyFilePath) {
 		logrus.Debug("SSH keys already exist")
 		return nil
@@ -39,13 +39,13 @@ func CreateKeypairIfNotExists(path string, force bool) error {
 
 	privFile, err := os.OpenFile(privKeyFilePath, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
-		return fmt.Errorf("failed to open private key file: %s", err.Error())
+		return errors.WithMessage(err, "failed to open private key file")
 	}
 	defer privFile.Close()
 
 	pubFile, err := os.OpenFile(pubKeyFilePath, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
-		return fmt.Errorf("failed to open public key file: %s", err.Error())
+		return errors.WithMessage(err, "failed to open public key file")
 	}
 	defer pubFile.Close()
 
@@ -58,6 +58,7 @@ func CreateKeypairIfNotExists(path string, force bool) error {
 // CreateCertFilesIfNotExist creates client and server TLS certificates if none could be found at the given path or if force is true
 func CreateCertFilesIfNotExist(host string, path string, force bool) error {
 	serverCertFilePath := filepath.Join(path, ServerCertFile)
+	clientCertFilePath := filepath.Join(path, ClientCertFile)
 
 	if !force && isExistent(serverCertFilePath) {
 		logrus.Debug("Certificates already exist")
@@ -66,9 +67,14 @@ func CreateCertFilesIfNotExist(host string, path string, force bool) error {
 
 	logrus.Debug("Generating Certificates")
 
-	priv, err := GetPrivateKey(path)
+	priv, err := GetPrivateKey(filepath.Join(path, PrivateKeyFile))
 	if err != nil {
 		return fmt.Errorf("failed to load private key: %s", err)
+	}
+
+	clienPriv, err := GetPrivateKey(filepath.Join(path, ClientPrivateKeyFile))
+	if err != nil {
+		return fmt.Errorf("failed to load client private key: %s", err)
 	}
 
 	serverCertFile, err := os.OpenFile(serverCertFilePath, os.O_RDWR|os.O_CREATE, 0600)
@@ -77,9 +83,24 @@ func CreateCertFilesIfNotExist(host string, path string, force bool) error {
 	}
 	defer serverCertFile.Close()
 
-	_ = serverCertFile.Truncate(0)
+	clientCertFile, err := os.OpenFile(clientCertFilePath, os.O_RDWR|os.O_CREATE, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open client cert file: %s", err.Error())
+	}
+	defer clientCertFile.Close()
 
-	return generateCert(priv, strings.Split(host, ","), serverCertFile)
+	_ = serverCertFile.Truncate(0)
+	_ = clientCertFile.Truncate(0)
+
+	if err := generateCert(priv, []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}, strings.Split(host, ","), serverCertFile); err != nil {
+		return err
+	}
+
+	if err := generateCert(clienPriv, []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}, []string{}, clientCertFile); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // generateKeyPair generates an ECDSA key pair and writes them to the given streams
@@ -114,7 +135,7 @@ func generateKeyPair(keyFile io.Writer, pubFile io.Writer) error {
 	return nil
 }
 
-func generateCert(priv *ecdsa.PrivateKey, hosts []string, certFile io.Writer) error {
+func generateCert(priv *ecdsa.PrivateKey, extKeyUsage []x509.ExtKeyUsage, hosts []string, certFile io.Writer) error {
 	keyUsage := x509.KeyUsageDigitalSignature
 	notBefore := time.Now()
 	notAfter := notBefore.Add(10 * 365 * 24 * time.Hour)
@@ -132,7 +153,7 @@ func generateCert(priv *ecdsa.PrivateKey, hosts []string, certFile io.Writer) er
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
 		KeyUsage:              keyUsage,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		ExtKeyUsage:           extKeyUsage,
 		BasicConstraintsValid: true,
 	}
 

@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"github.com/lacodon/recoon/pkg/client"
+	"errors"
 	"github.com/spf13/cobra"
 )
 
@@ -18,9 +17,8 @@ func init() {
 
 func logsCmdRun(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("must pass container id")
+		return errors.New("must pass container id")
 	}
 
-	c := client.New("http://localhost:3680/api/v1")
-	return c.StreamContainerLogs(args[0])
+	return apiClient.StreamContainerLogs(args[0])
 }

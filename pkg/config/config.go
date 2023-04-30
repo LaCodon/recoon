@@ -32,6 +32,7 @@ type AppRepo struct {
 
 type UI struct {
 	Port int
+	Host string
 }
 
 var Cfg Config
@@ -57,6 +58,7 @@ func init() {
 		},
 		UI: UI{
 			Port: 3680,
+			Host: "localhost",
 		},
 	}
 }

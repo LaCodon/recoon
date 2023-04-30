@@ -7,6 +7,7 @@ import (
 	dockerfilters "github.com/docker/docker/api/types/filters"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/go-cmd/cmd"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"io"
 	"strings"
@@ -47,7 +48,7 @@ func Down(projectName string) error {
 func Status(ctx context.Context, projectName string) ([]dockertypes.Container, error) {
 	client, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithAPIVersionNegotiation())
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to docker socket: %s", err.Error())
+		return nil, errors.WithMessage(err, "failed to connect to docker socket")
 	}
 
 	var filters dockerfilters.Args
@@ -68,7 +69,7 @@ func Logs(ctx context.Context, containerId string, since string, tail string) (s
 
 	client, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithAPIVersionNegotiation())
 	if err != nil {
-		return "nil", fmt.Errorf("failed to connect to docker socket: %s", err.Error())
+		return "nil", errors.WithMessage(err, "failed to connect to docker socket")
 	}
 
 	reader, err := client.ContainerLogs(ctx, containerId, dockertypes.ContainerLogsOptions{
