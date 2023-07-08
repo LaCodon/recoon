@@ -1,0 +1,16 @@
+# this config file can be used during development
+appRepo:
+  reconciliationInterval: 5s
+configRepo:
+  cloneURL: git@github.com:LaCodon/recoon-test.git
+  branchName: test
+  reconciliationInterval: 10s
+ssh:
+  keyDir: ./.data
+  host: localhost,127.0.0.1
+store:
+  databaseFile: ./.data/bbolt.db
+  gitDir: ./.data/repos/
+ui:
+  port: 3680
+  host: localhost

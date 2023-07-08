@@ -40,7 +40,7 @@ func (c *Controller) handleConfigRepoChangeEvent(ctx context.Context, event stor
 	cloneUrl := apiRepo.Spec.Url
 	branchName := apiRepo.Spec.Branch
 
-	repo, err := gitrepo.NewReadOnlyGitRepository(gitrepo.MakeLocalPath(cloneUrl, branchName))
+	repo, err := gitrepo.NewReadOnlyGitRepository(gitrepo.MakeLocalPath(c.localGitDir, cloneUrl, branchName), c.sshKeyDir)
 	if err != nil {
 		return errors.WithMessage(err, "failed to initialize config repo")
 	}

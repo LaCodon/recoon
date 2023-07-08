@@ -16,15 +16,17 @@ import (
 )
 
 // InitSSHKeys initializes the SSH keys of recoon
-func InitSSHKeys() error {
-	privKeyFilePath := filepath.Join(config.Cfg.SSH.KeyDir, sshauth.PrivateKeyFile)
-	pubKeyFilePath := filepath.Join(config.Cfg.SSH.KeyDir, sshauth.PublicKeyFile)
+func InitSSHKeys(sshConfig config.Getter) error {
+	sshKeyDir := sshConfig.GetString("keyDir")
+
+	privKeyFilePath := filepath.Join(sshKeyDir, sshauth.PrivateKeyFile)
+	pubKeyFilePath := filepath.Join(sshKeyDir, sshauth.PublicKeyFile)
 	if err := sshauth.CreateKeypairIfNotExists(privKeyFilePath, pubKeyFilePath, false); err != nil {
 		return errors.WithMessage(err, "failed to generate server key pair")
 	}
 
-	clientPrivKeyFilePath := filepath.Join(config.Cfg.SSH.KeyDir, sshauth.ClientPrivateKeyFile)
-	clientPubKeyFilePath := filepath.Join(config.Cfg.SSH.KeyDir, sshauth.ClientPublicKeyFile)
+	clientPrivKeyFilePath := filepath.Join(sshKeyDir, sshauth.ClientPrivateKeyFile)
+	clientPubKeyFilePath := filepath.Join(sshKeyDir, sshauth.ClientPublicKeyFile)
 	if err := sshauth.CreateKeypairIfNotExists(clientPrivKeyFilePath, clientPubKeyFilePath, false); err != nil {
 		return errors.WithMessage(err, "failed to generate client key pair")
 	}
@@ -46,20 +48,22 @@ func InitStore(api *store.DefaultStore) error {
 }
 
 // InitTLS generates a TLS server and client certificate; requires InitSSHKeys
-func InitTLS() error {
-	return sshauth.CreateCertFilesIfNotExist(config.Cfg.SSH.Host, config.Cfg.SSH.KeyDir, false)
+func InitTLS(sshConfig config.Getter) error {
+	return sshauth.CreateCertFilesIfNotExist(sshConfig.GetString("host"), sshConfig.GetString("keyDir"), false)
 }
 
 // InitClientConfig generates the client config json
-func InitClientConfig() error {
-	hostBase := fmt.Sprintf("https://%s:%d/api/v1", config.Cfg.UI.Host, config.Cfg.UI.Port)
+func InitClientConfig(sshConfig, uiConfig config.Getter) error {
+	hostBase := fmt.Sprintf("https://%s:%d/api/v1", uiConfig.GetString("host"), uiConfig.GetInt("port"))
 
-	serverCert, err := os.ReadFile(filepath.Join(config.Cfg.SSH.KeyDir, sshauth.ServerCertFile))
+	sshKeyDir := sshConfig.GetString("keyDir")
+
+	serverCert, err := os.ReadFile(filepath.Join(sshKeyDir, sshauth.ServerCertFile))
 	if err != nil {
 		return errors.WithMessage(err, "failed to load server cert")
 	}
 
-	clientCert, err := tls.LoadX509KeyPair(filepath.Join(config.Cfg.SSH.KeyDir, sshauth.ClientCertFile), filepath.Join(config.Cfg.SSH.KeyDir, sshauth.ClientPrivateKeyFile))
+	clientCert, err := tls.LoadX509KeyPair(filepath.Join(sshKeyDir, sshauth.ClientCertFile), filepath.Join(sshKeyDir, sshauth.ClientPrivateKeyFile))
 	if err != nil {
 		return errors.WithMessage(err, "failed to load client cert")
 	}
@@ -74,5 +78,5 @@ func InitClientConfig() error {
 		return errors.WithMessage(err, "failed to marshal client config json")
 	}
 
-	return os.WriteFile(filepath.Join(config.Cfg.SSH.KeyDir, "client.json"), configOut, 0600)
+	return os.WriteFile(filepath.Join(sshKeyDir, "client.json"), configOut, 0600)
 }

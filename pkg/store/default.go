@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/lacodon/recoon/pkg/api"
 	"github.com/lacodon/recoon/pkg/api/v1/meta"
-	"github.com/lacodon/recoon/pkg/config"
 	"github.com/lacodon/recoon/pkg/schema"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -20,7 +19,7 @@ import (
 // force interface implementation during compile time
 var _ GetterSetter = &DefaultStore{}
 
-func NewDefaultStore(opts ...AdaptOption) (*DefaultStore, error) {
+func NewDefaultStore(storeFilePath string, opts ...AdaptOption) (*DefaultStore, error) {
 	options := &bolt.Options{
 		Timeout:      5 * time.Second,
 		FreelistType: bolt.FreelistMapType,
@@ -30,7 +29,7 @@ func NewDefaultStore(opts ...AdaptOption) (*DefaultStore, error) {
 		opt(options)
 	}
 
-	db, err := bolt.Open(config.Cfg.Store.DatabaseFile, 0664, options)
+	db, err := bolt.Open(storeFilePath, 0664, options)
 	if err != nil {
 		return nil, err
 	}

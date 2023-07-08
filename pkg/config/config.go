@@ -1,64 +1,27 @@
 package config
 
-import "time"
+import (
+	"github.com/spf13/viper"
+	"time"
+)
 
-type Config struct {
-	Store      Store
-	SSH        SSH
-	ConfigRepo ConfigRepo
-	AppRepo    AppRepo
-	UI         UI
+type Getter interface {
+	GetString(key string) string
+	GetInt(key string) int
+	GetDuration(key string) time.Duration
+	Sub(key string) *viper.Viper
 }
 
-type Store struct {
-	DatabaseFile string
-	GitDir       string
-}
+func Setup() (Getter, error) {
+	viper.SetConfigName("recooncfg")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("/etc/recoon")
+	viper.AddConfigPath("$HOME/.recoon")
+	viper.AddConfigPath(".")
 
-type SSH struct {
-	KeyDir string
-	Host   string
-}
-
-type ConfigRepo struct {
-	CloneURL                string
-	BranchName              string
-	ReconciliationIntervall time.Duration
-}
-
-type AppRepo struct {
-	ReconciliationIntervall time.Duration
-}
-
-type UI struct {
-	Port int
-	Host string
-}
-
-var Cfg Config
-
-func init() {
-	// set defaults
-	Cfg = Config{
-		Store: Store{
-			DatabaseFile: "./.data/bbolt.db",
-			GitDir:       "./.data/repos/",
-		},
-		SSH: SSH{
-			KeyDir: "./.data/",
-			Host:   "localhost,127.0.0.1",
-		},
-		ConfigRepo: ConfigRepo{
-			CloneURL:                "git@github.com:LaCodon/recoon-test.git",
-			BranchName:              "test",
-			ReconciliationIntervall: 10 * time.Second,
-		},
-		AppRepo: AppRepo{
-			ReconciliationIntervall: 5 * time.Second,
-		},
-		UI: UI{
-			Port: 3680,
-			Host: "localhost",
-		},
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, err
 	}
+
+	return viper.GetViper(), nil
 }

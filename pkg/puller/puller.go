@@ -5,7 +5,6 @@ import (
 	metav1 "github.com/lacodon/recoon/pkg/api/v1/meta"
 	projectv1 "github.com/lacodon/recoon/pkg/api/v1/project"
 	repositoryv1 "github.com/lacodon/recoon/pkg/api/v1/repository"
-	"github.com/lacodon/recoon/pkg/config"
 	"github.com/lacodon/recoon/pkg/gitrepo"
 	"github.com/lacodon/recoon/pkg/store"
 	"github.com/pkg/errors"
@@ -15,12 +14,18 @@ import (
 )
 
 type Puller struct {
-	api store.GetterSetter
+	api                    store.GetterSetter
+	gitDir                 string
+	sshKeyDir              string
+	reconciliationInterval time.Duration
 }
 
-func NewPuller(api store.GetterSetter) *Puller {
+func NewPuller(api store.GetterSetter, gitDir, sshKeyDir string, reconciliationInterval time.Duration) *Puller {
 	return &Puller{
-		api: api,
+		api:                    api,
+		gitDir:                 gitDir,
+		sshKeyDir:              sshKeyDir,
+		reconciliationInterval: reconciliationInterval,
 	}
 }
 
@@ -29,7 +34,7 @@ func (p *Puller) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(config.Cfg.AppRepo.ReconciliationIntervall):
+		case <-time.After(p.reconciliationInterval):
 			if err := p.runOnce(ctx); err != nil {
 				logrus.WithError(err).Warn("failed to update/pull app repositories")
 			}
@@ -80,7 +85,7 @@ func (p *Puller) runOnce(ctx context.Context) error {
 		pullRepo := repos[0]
 
 		ctxTimeout, cancel := context.WithTimeout(ctx, 2*time.Minute)
-		localRepo, err := gitrepo.NewGitRepository(ctxTimeout, pullRepo.Spec.Url, pullRepo.Spec.Branch)
+		localRepo, err := gitrepo.NewGitRepository(ctxTimeout, p.gitDir, pullRepo.Spec.Url, pullRepo.Spec.Branch, p.sshKeyDir)
 		if err != nil {
 			logrus.WithError(err).Warn("failed to init git repo")
 			cancel()

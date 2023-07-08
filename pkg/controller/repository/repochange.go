@@ -37,7 +37,7 @@ func (c *Controller) handleRepoCreate(ctx context.Context, event store.Event) er
 		return nil
 	}
 
-	repo, err := gitrepo.NewGitRepository(ctx, apiRepo.Spec.Url, apiRepo.Spec.Branch)
+	repo, err := gitrepo.NewGitRepository(ctx, c.localGitDir, apiRepo.Spec.Url, apiRepo.Spec.Branch, c.sshKeyDir)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create app repo")
 	}

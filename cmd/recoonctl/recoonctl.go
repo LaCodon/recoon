@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/lacodon/recoon/pkg/client"
-	"github.com/lacodon/recoon/pkg/config"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"path/filepath"
@@ -20,7 +19,7 @@ var rootCmd = &cobra.Command{
 }
 
 func loadConfig(cmd *cobra.Command, args []string) error {
-	clientConfig, err := client.LoadConfig(filepath.Join(config.Cfg.SSH.KeyDir, "client.json"))
+	clientConfig, err := client.LoadConfig(filepath.Join(".data", "client.json"))
 	if err != nil {
 		logrus.WithError(err).Error("failed to load client config")
 		return err

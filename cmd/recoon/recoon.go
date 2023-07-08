@@ -31,27 +31,44 @@ var rootCmd = &cobra.Command{
 }
 
 func rootCmdRun(cmd *cobra.Command, _ []string) error {
-	api, err := store.NewDefaultStore()
+	cfg, err := config.Setup()
 	if err != nil {
 		return err
 	}
 
-	if err := initRecoon(api); err != nil {
+	api, err := store.NewDefaultStore(cfg.GetString("store.databaseFile"))
+	if err != nil {
+		return err
+	}
+
+	if err := initRecoon(api, cfg); err != nil {
 		return err
 	}
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	logrus.Println(sshauth.GetPublicKeyOpenSSHFormat(config.Cfg.SSH.KeyDir))
+	logrus.Println(sshauth.GetPublicKeyOpenSSHFormat(cfg.GetString("ssh.keyDir")))
 
 	apiWatcher := watcher.NewDefaultWatcher(api.EventsChan())
-	repoPuller := puller.NewPuller(api)
-	repoConfigController := configrepo.NewController(config.Cfg.ConfigRepo.CloneURL, config.Cfg.ConfigRepo.BranchName, api)
-	repositoryController := repository.NewController(apiWatcher, api)
+	repoPuller := puller.NewPuller(api,
+		cfg.GetString("store.gitDir"),
+		cfg.GetString("ssh.keyDir"),
+		cfg.GetDuration("appRepo.reconciliationInterval"))
+	repoConfigController := configrepo.NewController(api,
+		cfg.GetString("store.gitDir"),
+		cfg.GetString("configRepo.cloneURL"),
+		cfg.GetString("configRepo.branchName"),
+		cfg.GetDuration("configRepo.reconciliationInterval"),
+		cfg.GetString("ssh.keyDir"))
+	repositoryController := repository.NewController(apiWatcher, api,
+		cfg.GetString("store.gitDir"),
+		cfg.GetString("ssh.keyDir"))
 	projectController := project.NewController(apiWatcher, api)
 	eventController := event.NewController(api)
-	recoonUI := ui.New(api)
+	recoonUI := ui.New(api,
+		cfg.GetInt("ui.port"),
+		cfg.GetString("ssh.keyDir"))
 
 	ctx, cancel := context.WithCancel(cmd.Context())
 

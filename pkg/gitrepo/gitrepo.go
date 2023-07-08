@@ -9,7 +9,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
-	"github.com/lacodon/recoon/pkg/config"
 	"github.com/lacodon/recoon/pkg/sshauth"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -37,13 +36,13 @@ type gitRepo struct {
 	auth       transport.AuthMethod
 }
 
-func NewReadOnlyGitRepository(localPath string) (ReadonlyGitRepository, error) {
+func NewReadOnlyGitRepository(localPath, sshKeyDir string) (ReadonlyGitRepository, error) {
 	repo, err := git.PlainOpen(localPath)
 	if err != nil {
 		return nil, err
 	}
 
-	auth, err := ssh.NewPublicKeysFromFile("git", filepath.Join(config.Cfg.SSH.KeyDir, sshauth.PrivateKeyFile), "")
+	auth, err := ssh.NewPublicKeysFromFile("git", filepath.Join(sshKeyDir, sshauth.PrivateKeyFile), "")
 	if err != nil {
 		return nil, err
 	}
@@ -55,18 +54,18 @@ func NewReadOnlyGitRepository(localPath string) (ReadonlyGitRepository, error) {
 	}, nil
 }
 
-func NewGitRepository(ctx context.Context, cloneUrl, branchName string) (GitRepository, error) {
+func NewGitRepository(ctx context.Context, localDir, cloneUrl, branchName, sshKeyDir string) (GitRepository, error) {
 	var progressWriter io.Writer
 	if logrus.GetLevel() == logrus.DebugLevel {
 		progressWriter = os.Stdout
 	}
 
-	auth, err := ssh.NewPublicKeysFromFile("git", filepath.Join(config.Cfg.SSH.KeyDir, sshauth.PrivateKeyFile), "")
+	auth, err := ssh.NewPublicKeysFromFile("git", filepath.Join(sshKeyDir, sshauth.PrivateKeyFile), "")
 	if err != nil {
 		return nil, err
 	}
 
-	destinationPath := MakeLocalPath(cloneUrl, branchName)
+	destinationPath := MakeLocalPath(localDir, cloneUrl, branchName)
 	if err != nil {
 		return nil, err
 	}

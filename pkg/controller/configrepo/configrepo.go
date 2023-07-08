@@ -4,7 +4,6 @@ import (
 	"context"
 	metav1 "github.com/lacodon/recoon/pkg/api/v1/meta"
 	repositoryv1 "github.com/lacodon/recoon/pkg/api/v1/repository"
-	"github.com/lacodon/recoon/pkg/config"
 	"github.com/lacodon/recoon/pkg/gitrepo"
 	"github.com/lacodon/recoon/pkg/store"
 	"github.com/pkg/errors"
@@ -15,24 +14,30 @@ import (
 const ConfigRepoName = "config-repo"
 
 type Controller struct {
-	cloneURL   string
-	branchName string
-	api        store.GetterSetter
+	cloneURL               string
+	branchName             string
+	api                    store.GetterSetter
+	reconciliationInterval time.Duration
+	localGitDir            string
+	sshKeyDir              string
 
 	repo gitrepo.GitRepository
 }
 
-func NewController(cloneURL string, branchName string, api store.GetterSetter) *Controller {
+func NewController(api store.GetterSetter, localGitDir, cloneURL, branchName string, reconciliationInterval time.Duration, sshKeyDir string) *Controller {
 	return &Controller{
-		cloneURL:   cloneURL,
-		branchName: branchName,
-		api:        api,
+		cloneURL:               cloneURL,
+		branchName:             branchName,
+		api:                    api,
+		reconciliationInterval: reconciliationInterval,
+		localGitDir:            localGitDir,
+		sshKeyDir:              sshKeyDir,
 	}
 }
 
 func (c *Controller) Run(ctx context.Context) error {
 	var err error
-	c.repo, err = gitrepo.NewGitRepository(ctx, c.cloneURL, c.branchName)
+	c.repo, err = gitrepo.NewGitRepository(ctx, c.localGitDir, c.cloneURL, c.branchName, c.sshKeyDir)
 	if err != nil {
 		return errors.WithMessage(err, "failed to initialize config repo")
 	}
@@ -42,7 +47,7 @@ func (c *Controller) Run(ctx context.Context) error {
 			logrus.WithError(err).Warn("failed to update config repo")
 		}
 
-		timer := time.NewTimer(config.Cfg.ConfigRepo.ReconciliationIntervall)
+		timer := time.NewTimer(c.reconciliationInterval)
 		select {
 		case <-ctx.Done():
 			return nil

@@ -12,18 +12,22 @@ import (
 )
 
 type Controller struct {
-	events  <-chan store.Event
-	api     store.GetterSetter
-	retryer retry.Retryer
+	events      <-chan store.Event
+	api         store.GetterSetter
+	retryer     retry.Retryer
+	localGitDir string
+	sshKeyDir   string
 }
 
-func NewController(apiWatcher watcher.Watcher, api store.GetterSetter) *Controller {
+func NewController(apiWatcher watcher.Watcher, api store.GetterSetter, localGitDir, sshKeyDir string) *Controller {
 	events := apiWatcher.Watch(repositoryv1.VersionKind)
 
 	return &Controller{
-		events:  events,
-		api:     api,
-		retryer: retry.New(events),
+		events:      events,
+		api:         api,
+		retryer:     retry.New(events),
+		localGitDir: localGitDir,
+		sshKeyDir:   sshKeyDir,
 	}
 }
 
