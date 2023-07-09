@@ -99,6 +99,10 @@ func (p *Puller) runOnce(ctx context.Context) error {
 		}
 
 		for _, repo := range repos {
+			if repo.Status.CurrentCommitId == localRepo.GetCurrentCommitId() {
+				continue
+			}
+
 			repo.Status.CurrentCommitId = localRepo.GetCurrentCommitId()
 			if err := p.api.Update(repo); err != nil {
 				if errors.Is(err, store.ErrNotFound) {
