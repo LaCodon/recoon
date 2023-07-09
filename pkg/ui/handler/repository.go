@@ -45,3 +45,10 @@ func RepositoryGet(api store.Getter) echo.HandlerFunc {
 		return c.JSON(http.StatusOK, repo)
 	}
 }
+
+func RepositoryReconcile(repoReconcileTrigger chan<- bool) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		repoReconcileTrigger <- true
+		return c.JSON(http.StatusOK, nil)
+	}
+}

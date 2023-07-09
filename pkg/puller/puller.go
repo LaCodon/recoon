@@ -15,14 +15,16 @@ import (
 
 type Puller struct {
 	api                    store.GetterSetter
+	immediateReconcile     <-chan bool
 	gitDir                 string
 	sshKeyDir              string
 	reconciliationInterval time.Duration
 }
 
-func NewPuller(api store.GetterSetter, gitDir, sshKeyDir string, reconciliationInterval time.Duration) *Puller {
+func NewPuller(api store.GetterSetter, immediateReconcile <-chan bool, gitDir, sshKeyDir string, reconciliationInterval time.Duration) *Puller {
 	return &Puller{
 		api:                    api,
+		immediateReconcile:     immediateReconcile,
 		gitDir:                 gitDir,
 		sshKeyDir:              sshKeyDir,
 		reconciliationInterval: reconciliationInterval,
@@ -31,10 +33,18 @@ func NewPuller(api store.GetterSetter, gitDir, sshKeyDir string, reconciliationI
 
 func (p *Puller) Run(ctx context.Context) error {
 	for {
+		t := time.NewTimer(p.reconciliationInterval)
+
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(p.reconciliationInterval):
+		case <-t.C:
+			if err := p.runOnce(ctx); err != nil {
+				logrus.WithError(err).Warn("failed to update/pull app repositories")
+			}
+		case <-p.immediateReconcile:
+			t.Stop()
+			logrus.Info("got immediate reconcile event")
 			if err := p.runOnce(ctx); err != nil {
 				logrus.WithError(err).Warn("failed to update/pull app repositories")
 			}

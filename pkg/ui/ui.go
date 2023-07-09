@@ -15,16 +15,18 @@ import (
 )
 
 type UI struct {
-	api       store.Getter
-	port      int
-	sshKeyDir string
+	api                  store.Getter
+	port                 int
+	sshKeyDir            string
+	repoReconcileTrigger chan<- bool
 }
 
-func New(api store.Getter, port int, sshKeyDir string) *UI {
+func New(api store.Getter, repoReconcileTrigger chan<- bool, port int, sshKeyDir string) *UI {
 	return &UI{
-		api:       api,
-		port:      port,
-		sshKeyDir: sshKeyDir,
+		api:                  api,
+		port:                 port,
+		sshKeyDir:            sshKeyDir,
+		repoReconcileTrigger: repoReconcileTrigger,
 	}
 }
 

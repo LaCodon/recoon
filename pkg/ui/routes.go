@@ -13,6 +13,8 @@ func (u *UI) setupRoutes(e *echo.Echo) {
 
 	apiGroup := e.Group("/api/v1")
 
+	apiGroup.PUT("/reconcile", handler.RepositoryReconcile(u.repoReconcileTrigger))
+
 	repoGroup := apiGroup.Group("/repository")
 	repoGroup.GET("", handler.RepositoryList(u.api))
 	repoGroup.GET("/:namespace", handler.RepositoryList(u.api))

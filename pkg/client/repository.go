@@ -32,3 +32,16 @@ func (c *Client) GetRepository(name string) (*repositoryv1.Repository, error) {
 
 	return resp.Result().(*repositoryv1.Repository), nil
 }
+
+func (c *Client) Reconcile() error {
+	resp, err := c.client.R().Put("/reconcile")
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("%s: %s", resp.Status(), string(resp.Body()))
+	}
+
+	return nil
+}

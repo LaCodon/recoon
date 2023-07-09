@@ -50,8 +50,11 @@ func rootCmdRun(cmd *cobra.Command, _ []string) error {
 
 	logrus.Println(sshauth.GetPublicKeyOpenSSHFormat(cfg.GetString("ssh.keyDir")))
 
+	immediateRepoReconcileTrigger := make(chan bool)
+
 	apiWatcher := watcher.NewDefaultWatcher(api.EventsChan())
 	repoPuller := puller.NewPuller(api,
+		immediateRepoReconcileTrigger,
 		cfg.GetString("store.gitDir"),
 		cfg.GetString("ssh.keyDir"),
 		cfg.GetDuration("appRepo.reconciliationInterval"))
@@ -67,6 +70,7 @@ func rootCmdRun(cmd *cobra.Command, _ []string) error {
 	projectController := project.NewController(apiWatcher, api)
 	eventController := event.NewController(api)
 	recoonUI := ui.New(api,
+		immediateRepoReconcileTrigger,
 		cfg.GetInt("ui.port"),
 		cfg.GetString("ssh.keyDir"))
 
