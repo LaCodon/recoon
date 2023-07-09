@@ -1,0 +1,3 @@
+configRepo:
+  cloneURL: git@github.com:LaCodon/recoon-test.git
+  branchName: test
