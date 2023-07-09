@@ -15,7 +15,7 @@ func init() {
 	rootCmd.AddCommand(reconcileCmd)
 }
 
-func reconcileCmdRun(cmd *cobra.Command, args []string) error {
+func reconcileCmdRun(_ *cobra.Command, _ []string) error {
 	if err := apiClient.Reconcile(); err != nil {
 		return err
 	}

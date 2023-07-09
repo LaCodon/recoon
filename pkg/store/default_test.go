@@ -35,7 +35,7 @@ var _ = Describe("DefaultStore", func() {
 
 		It("should open the database", func() {
 			var err error
-			api, err = store.NewDefaultStore(store.WithTempFs)
+			api, err = store.NewDefaultStore("./bbolt.db", store.WithTempFs)
 			Expect(err).To(BeNil())
 		})
 
@@ -70,7 +70,7 @@ var _ = Describe("DefaultStore", func() {
 
 		It("should open the database", func() {
 			var err error
-			api, err = store.NewDefaultStore(store.WithTempFs)
+			api, err = store.NewDefaultStore("./bbolt.db", store.WithTempFs)
 			Expect(err).To(BeNil())
 		})
 
@@ -93,7 +93,7 @@ var _ = Describe("DefaultStore", func() {
 
 		It("should open the database", func() {
 			var err error
-			api, err = store.NewDefaultStore(store.WithTempFs)
+			api, err = store.NewDefaultStore("./bbolt.db", store.WithTempFs)
 			Expect(err).To(BeNil())
 		})
 
@@ -171,7 +171,7 @@ var _ = Describe("DefaultStore", func() {
 
 		It("should open the database", func() {
 			var err error
-			api, err = store.NewDefaultStore(store.WithTempFs)
+			api, err = store.NewDefaultStore("./bbolt.db", store.WithTempFs)
 			Expect(err).To(BeNil())
 		})
 
@@ -211,7 +211,7 @@ var _ = Describe("DefaultStore", func() {
 
 		It("should open the database", func() {
 			var err error
-			api, err = store.NewDefaultStore(store.WithTempFs)
+			api, err = store.NewDefaultStore("./bbolt.db", store.WithTempFs)
 			Expect(err).To(BeNil())
 		})
 
