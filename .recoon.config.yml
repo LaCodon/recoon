@@ -1,0 +1,9 @@
+repos:
+  #- name: ssh-test
+  #  url: "git@gitlab.com:LaCodon/recoon-app-test.git"
+  #  branch: "main"
+  #  path: "/test/"
+  - name: build-test
+    url: "https://github.com/docker/docker-gs-ping.git"
+    branch: "main"
+    path: "/"
