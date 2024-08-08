@@ -3,6 +3,11 @@ package gitrepo
 import (
 	"context"
 	"errors"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-git/v5"
 	gitconfig "github.com/go-git/go-git/v5/config"
@@ -11,9 +16,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/lacodon/recoon/pkg/sshauth"
 	"github.com/sirupsen/logrus"
-	"io"
-	"os"
-	"path/filepath"
 )
 
 type GitRepository interface {
@@ -60,25 +62,27 @@ func NewGitRepository(ctx context.Context, localDir, cloneUrl, branchName, sshKe
 		progressWriter = os.Stdout
 	}
 
-	auth, err := ssh.NewPublicKeysFromFile("git", filepath.Join(sshKeyDir, sshauth.PrivateKeyFile), "")
-	if err != nil {
-		return nil, err
-	}
-
 	destinationPath := MakeLocalPath(localDir, cloneUrl, branchName)
-	if err != nil {
-		return nil, err
-	}
 
-	logrus.Debug("cloning into ", destinationPath)
-	repo, err := git.PlainCloneContext(ctx, destinationPath, false, &git.CloneOptions{
+	options := &git.CloneOptions{
 		URL:           cloneUrl,
-		Auth:          auth,
 		RemoteName:    "origin",
 		ReferenceName: plumbing.NewBranchReferenceName(branchName),
 		Progress:      progressWriter,
 		SingleBranch:  true,
-	})
+	}
+
+	if strings.HasPrefix(cloneUrl, "git@") {
+		auth, err := ssh.NewPublicKeysFromFile("git", filepath.Join(sshKeyDir, sshauth.PrivateKeyFile), "")
+		if err != nil {
+			return nil, err
+		}
+
+		options.Auth = auth
+	}
+
+	logrus.Debug("cloning into ", destinationPath)
+	repo, err := git.PlainCloneContext(ctx, destinationPath, false, options)
 	if err != nil {
 		if err == git.ErrRepositoryAlreadyExists {
 			repo, err = git.PlainOpen(destinationPath)
@@ -97,7 +101,7 @@ func NewGitRepository(ctx context.Context, localDir, cloneUrl, branchName, sshKe
 		branchName: branchName,
 		localPath:  destinationPath,
 		repository: repo,
-		auth:       auth,
+		auth:       options.Auth,
 	}, nil
 }
 

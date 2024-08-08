@@ -1,3 +1,25 @@
+# sample config file
+appRepo:
+  # how often to renconcile the app repos defined in the configRepo
+  reconciliationInterval: 5s
 configRepo:
-  cloneURL: git@github.com:LaCodon/recoon-test.git
-  branchName: test
+  # where to get the config (.recoon.config.yml) from
+  cloneURL: https://github.com/LaCodon/recoon.git
+  branchName: main
+  # how often to reconcile the config
+  reconciliationInterval: 10s
+ssh:
+  # where to store generated SSH key. The public key has to be added to your config and app repo provider if they are private
+  keyDir: /var/lib/recoon
+  # recoon will also generate a client cert which can be used by recoonctl to interact with the API remotly
+  # put the right hostname here so that the certs are valid
+  host: localhost,127.0.0.1
+store:
+  # where to store the internal state
+  databaseFile: /var/lib/recoon/bbolt.db
+  # where to store cloned git repositories (config and app repos)
+  gitDir: /var/lib/recoon/repos/
+ui:
+  # where to expose the API
+  port: 3680
+  host: localhost
